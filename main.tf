@@ -352,14 +352,14 @@ resource "aws_ecs_service" "ignore_changes_task_definition" {
       assign_public_ip = var.assign_public_ip
     }
   }
-
+ # I'm adding this to ignore cuz it has a bug w. applies
   deployment_circuit_breaker {
     enable   = var.circuit_breaker_deployment_enabled
     rollback = var.circuit_breaker_rollback_enabled
   }
 
   lifecycle {
-    ignore_changes = [task_definition,load_balancer]
+    ignore_changes = [task_definition,load_balancer,deployment_circuit_breaker]
   }
 }
 
