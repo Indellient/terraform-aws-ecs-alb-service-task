@@ -41,7 +41,7 @@ resource "aws_ecs_task_definition" "default" {
   network_mode             = var.network_mode
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = length(var.task_exec_role_arn) > 0 ? var.task_exec_role_arn : join("", aws_iam_role.ecs_exec.*.arn)
+  execution_role_arn       = var.task_exec_role_arn
   task_role_arn            = var.task_role_arn
 
   dynamic "proxy_configuration" {
@@ -200,59 +200,59 @@ resource "aws_iam_role_policy" "ecs_service" {
 #}
 
 # IAM role that the Amazon ECS container agent and the Docker daemon can assume
-data "aws_iam_policy_document" "ecs_task_exec" {
-  count = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
+# data "aws_iam_policy_document" "ecs_task_exec" {
+#   count = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
 
-  statement {
-    actions = ["sts:AssumeRole"]
+#   statement {
+#     actions = ["sts:AssumeRole"]
 
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
+#     principals {
+#       type        = "Service"
+#       identifiers = ["ecs-tasks.amazonaws.com"]
+#     }
+#   }
+# }
 
-resource "aws_iam_role" "ecs_exec" {
-  count                = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
-  name                 = module.exec_label.id
-  assume_role_policy   = join("", data.aws_iam_policy_document.ecs_task_exec.*.json)
-  permissions_boundary = var.permissions_boundary == "" ? null : var.permissions_boundary
-  tags                 = module.exec_label.tags
-}
+# resource "aws_iam_role" "ecs_exec" {
+#   count                = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
+#   name                 = module.exec_label.id
+#   assume_role_policy   = join("", data.aws_iam_policy_document.ecs_task_exec.*.json)
+#   permissions_boundary = var.permissions_boundary == "" ? null : var.permissions_boundary
+#   tags                 = module.exec_label.tags
+# }
 
-data "aws_iam_policy_document" "ecs_exec" {
-  count = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
+# data "aws_iam_policy_document" "ecs_exec" {
+#   count = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
 
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
+#   statement {
+#     effect    = "Allow"
+#     resources = ["*"]
 
-    actions = [
-      "ssm:GetParameters",
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchGetImage",
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-  }
-}
+#     actions = [
+#       "ssm:GetParameters",
+#       "ecr:GetAuthorizationToken",
+#       "ecr:BatchCheckLayerAvailability",
+#       "ecr:GetDownloadUrlForLayer",
+#       "ecr:BatchGetImage",
+#       "logs:CreateLogGroup",
+#       "logs:CreateLogStream",
+#       "logs:PutLogEvents"
+#     ]
+#   }
+# }
 
-resource "aws_iam_role_policy" "ecs_exec" {
-  count  = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
-  name   = module.exec_label.id
-  policy = join("", data.aws_iam_policy_document.ecs_exec.*.json)
-  role   = join("", aws_iam_role.ecs_exec.*.id)
-}
+# resource "aws_iam_role_policy" "ecs_exec" {
+#   count  = local.enabled && length(var.task_exec_role_arn) == 0 ? 1 : 0
+#   name   = module.exec_label.id
+#   policy = join("", data.aws_iam_policy_document.ecs_exec.*.json)
+#   role   = join("", aws_iam_role.ecs_exec.*.id)
+# }
 
-resource "aws_iam_role_policy_attachment" "ecs_exec" {
-  count      = local.enabled && length(var.task_exec_role_arn) == 0 ? length(var.task_exec_policy_arns) : 0
-  policy_arn = var.task_exec_policy_arns[count.index]
-  role       = join("", aws_iam_role.ecs_exec.*.id)
-}
+# resource "aws_iam_role_policy_attachment" "ecs_exec" {
+#   count      = local.enabled && length(var.task_exec_role_arn) == 0 ? length(var.task_exec_policy_arns) : 0
+#   policy_arn = var.task_exec_policy_arns[count.index]
+#   role       = join("", aws_iam_role.ecs_exec.*.id)
+# }
 
 # Service
 ## Security Groups
